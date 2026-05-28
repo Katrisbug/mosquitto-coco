@@ -1,35 +1,40 @@
 from fastapi import FastAPI
-import paho.mqtt.publish as publish
+from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from fastapi import Request
+import paho.mqtt.client as mqtt
 
 app = FastAPI()
 
-MQTT_BROKER = "localhost"
-MQTT_PORT = 1883
+broker = "broker.hivemq.com"
+topico = "PROJ/ECOSSISTEMA"
 
-@app.get("/")
-def home():
-    return {"status": "Servidor funcionando"}
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+client.connect(broker, 1883)
 
-@app.get("/ligar")
+templates = Jinja2Templates(directory="templates")
+
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+
+    return templates.TemplateResponse(
+        "index.html",
+        {"request": request}
+    )
+
+@app.post("/ligar")
 def ligar():
 
-    publish.single(
-        topic="PROJ/ECOSSISTEMA",
-        payload="ON",
-        hostname=MQTT_BROKER,
-        port=MQTT_PORT
-    )
+    client.publish(topico, "ligado")
 
-    return {"PROJ/ECOSSISTEMA": "ligado"}
+    return {"status": "ligado"}
 
-@app.get("/desligar")
+@app.post("/desligar")
 def desligar():
 
-    publish.single(
-        topic="PROJ/ECOSSISTEMA",
-        payload="OFF",
-        hostname=MQTT_BROKER,
-        port=MQTT_PORT
-    )
+    client.publish(topico, "desligado")
 
-    return {"PROJ/ECOSSISTEMA": "desligado"}
+    return {"status": "desligado"}
