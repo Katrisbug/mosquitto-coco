@@ -9,7 +9,7 @@ const char* mqtt_server = "broker.hivemq.com";
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-const int ledPin = 2;
+const int ledPin = 4;
 
 void setup_wifi() {
   delay(10);

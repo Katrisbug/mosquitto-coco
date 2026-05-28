@@ -4,8 +4,9 @@ broker = "broker.hivemq.com"
 porta = 1883
 topico = "PROJ/ECOSSISTEMA"
 
-client = mqtt.Client()
-client.connect(broker, 1833)
+client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
+
+client.connect(broker, porta)
 
 while True:
     comando = input("Digite ligado ou desligado: ")
