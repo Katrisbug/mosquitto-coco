@@ -1,69 +1,100 @@
+#include <Arduino.h>
 #include <WiFi.h>
 #include <PubSubClient.h>
 
-const char* ssid = "iot";
-const char* password = "iotsenai502";
+const char* WIFI_SSID = "iot";
+const char* WIFI_PASSWORD = "iotsenai502";
 
-const char* mqtt_server = "broker.hivemq.com";
+// IP do computador onde está rodando o Mosquitto
+const char* MQTT_BROKER = "192.168.0.65";
+
+const int LED_PIN = 2;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
 
-const int ledPin = 4;
+void callback(char* topic, byte* payload, unsigned int length)
+{
+    String mensagem = "";
 
-void setup_wifi() {
-  delay(10);
-
-  WiFi.begin(ssid, password);
-
-  while (WiFi.status() != WL_CONNECTED) {
-    delay(500);
-  }
-}
-
-void callback(char* topic, byte* payload, unsigned int length) {
-
-  String mensagem;
-
-  for (int i = 0; i < length; i++) {
-    mensagem += (char)payload[i];
-  }
-
-  if (mensagem == "ligado") {
-    digitalWrite(ledPin, HIGH);
-  }
-
-  if (mensagem == "desligado") {
-    digitalWrite(ledPin, LOW);
-  }
-}
-
-void reconnect() {
-  while (!client.connected()) {
-
-    if (client.connect("ESP32Client" , "esp32", "grupo4")) {
-      client.subscribe("PROJ/ECOSSISTEMA");
-    } else {
-      delay(2000);
+    for (unsigned int i = 0; i < length; i++)
+    {
+        mensagem += (char)payload[i];
     }
-  }
+
+    Serial.print("Mensagem recebida: ");
+    Serial.println(mensagem);
+
+    if (mensagem == "ON")
+    {
+        digitalWrite(LED_PIN, HIGH);
+    }
+
+    if (mensagem == "OFF")
+    {
+        digitalWrite(LED_PIN, LOW);
+    }
 }
 
-void setup() {
+void conectarWiFi()
+{
+    Serial.println("Conectando ao WiFi...");
 
-  pinMode(ledPin, OUTPUT);
+    WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
 
-  setup_wifi();
+    while (WiFi.status() != WL_CONNECTED)
+    {
+        delay(500);
+        Serial.print(".");
+    }
 
-  client.setServer(mqtt_server, 1883);
-  client.setCallback(callback);
+    Serial.println();
+    Serial.println("WiFi conectado");
+    Serial.print("IP: ");
+    Serial.println(WiFi.localIP());
 }
 
-void loop() {
+void conectarMQTT()
+{
+    while (!client.connected())
+    {
+        Serial.println("Conectando ao MQTT...");
 
-  if (!client.connected()) {
-    reconnect();
-  }
+        if (client.connect("ESP32_CLIENT", "esp32", "grupo4"))
+        {
+            Serial.println("MQTT conectado");
 
-  client.loop();
+            client.subscribe("PROJ/ECOSSISTEMA");
+        }
+        else
+        {
+            Serial.print("Erro: ");
+            Serial.println(client.state());
+
+            delay(3000);
+        }
+    }
+}
+
+void setup()
+{
+    Serial.begin(115200);
+
+    pinMode(LED_PIN, OUTPUT);
+
+    conectarWiFi();
+
+    client.setServer(MQTT_BROKER, 1883);
+
+    client.setCallback(callback);
+}
+
+void loop()
+{
+    if (!client.connected())
+    {
+        conectarMQTT();
+    }
+
+    client.loop();
 }
