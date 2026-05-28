@@ -8,7 +8,7 @@ const char* WIFI_PASSWORD = "iotsenai502";
 // IP do computador onde está rodando o Mosquitto
 const char* MQTT_BROKER = "192.168.0.65";
 
-const int LED_PIN = 2;
+const int LED_PIN = 4;
 
 WiFiClient espClient;
 PubSubClient client(espClient);
